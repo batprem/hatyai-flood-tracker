@@ -1,0 +1,11 @@
+{
+  "name": "hatyai-flood-tracker-qa",
+  "private": true,
+  "scripts": {
+    "playwright": "playwright",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}
