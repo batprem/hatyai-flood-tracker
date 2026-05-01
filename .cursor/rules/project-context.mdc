@@ -1,0 +1,33 @@
+---
+description: Core context for the Hat Yai flood warning project
+alwaysApply: true
+---
+
+# Project Context
+
+Build a mobile-first flood monitoring website for the U-Tapao canal and Songkhla Lake basin, focused on Hat Yai public awareness and research use.
+
+Use this product direction unless the user changes it:
+
+- Frontend: Vite, React, TypeScript.
+- Backend: Python FastAPI.
+- Database: MongoDB.
+- Map: prefer MapLibre GL JS.
+- Deployment target: Vercel for frontend, Railway for backend.
+- UI language: Thai and English.
+- UX priority: public alert view first, modern and mobile-first.
+- Phase 1 data: GFS and ECMWF Open Data forecasts; mock water stations are acceptable.
+- Phase 1 risk: rule-based 4-level status: green, yellow, orange, red.
+- Deferred: LINE/email/push alerts, custom ML training, full production emergency workflow.
+
+Jira context:
+
+- Site: `data-karate.atlassian.net`.
+- Account: `prem.ch@ku.th`.
+- Project: `HFT` / `Hatyai-flood-Tracker`.
+- Board ID: `4`.
+- Board API name: `HFT board`; board location is `Hatyai-flood-Tracker (HFT)`.
+- Board type is `simple`, so it does not support sprints.
+
+Keep early implementation simple with `frontend/`, `backend/`, and `docs/` directories. Prefer mock data with stable API-shaped contracts before integrating fragile external data sources.
+
