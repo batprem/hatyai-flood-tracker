@@ -79,6 +79,7 @@ Acceptance criteria:
 Goal:
 
 - Convert forecast rainfall into simple public risk levels.
+- Use the practical design in [`risk-layer-design.md`](risk-layer-design.md) for Phase 1 thresholds, decision logic, output schema, explanation text, freshness handling, and later historical calibration.
 
 Deliverables:
 

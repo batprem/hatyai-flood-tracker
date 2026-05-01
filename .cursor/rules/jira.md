@@ -26,8 +26,7 @@ Use Jira for project task tracking when the user asks to create, view, update, a
 
 ## Status Policy
 
-- Do not transition a card to `In Progress` automatically when starting work.
-- Only move a card to `In Progress` when the user explicitly asks for that status change.
+-  Move a card to `In Progress` before  start a task
 - Do not transition any card directly to `Done` unless its current status is `Review`.
 - Before moving a card to `Done`, check the current status with a read-only Jira command.
 - If a card is not in `Review`, explain that it must move through `Review` first.
