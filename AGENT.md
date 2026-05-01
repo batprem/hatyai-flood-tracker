@@ -18,19 +18,34 @@ This repository is the Hat Yai flood warning project: a mobile-first public floo
 - `frontend/` is owned by frontend work.
 - `backend/` is owned by backend, data engineering, and data analytics work depending on task type.
 - `docs/` contains architecture, MVP, and data source planning.
-- `.cursor/` contains project rules and sub-agent definitions.
+- `qa/` is the QA agent workspace for validation tooling such as Playwright checks and acceptance evidence.
+- `.claude/` contains project rules, sub-agent definitions, skills, and hooks for Claude Code.
+- `.cursor/` contains the parallel set of rules, sub-agents, skills, and hooks for Cursor. Keep `.claude/` and `.cursor/` aligned when project-wide conventions change.
 - `rtoon/` is read-only.
 
 ## Sub-Agent Routing
 
-Use the focused agent when work clearly belongs to one area:
+Use the focused agent when work clearly belongs to one area. Definitions live in `.claude/agents/` (Claude Code) and `.cursor/agents/` (Cursor):
 
 - `frontend`: Vite, React, TypeScript, MapLibre UI, public alert pages, map controls, styling, frontend env vars.
 - `backend`: FastAPI routes, Pydantic schemas, MongoDB access, backend settings, API contracts, risk endpoints.
 - `data-engineering`: GFS/ECMWF ingestion, GRIB/NetCDF parsing, time-series storage, freshness, retries, provenance, data quality.
 - `data-analytics`: historical flood events, rainfall thresholds, risk rule calibration, model comparison, validation, research summaries.
+- `QA`: validation of Jira cards in `Review`, acceptance checks from `qa/`, Playwright/browser testing, and moving passed cards from `Review` to `Done`.
 
 Coordinate across agents when changing API contracts, data shapes, risk levels, or map layer schemas.
+
+## Project Rules
+
+Detailed conventions live in your tool's rules directory — `.claude/rules/` (Claude Code) or `.cursor/rules/` (Cursor). Both directories share the same content:
+
+- `project-context.mdc` — core project context (always applies).
+- `git.md` — submodule-aware Git workflow (always applies).
+- `jira.md` — Jira/`acli` workflow on project `HFT` (always applies).
+- `python.md` — Python/FastAPI/MongoDB conventions for `backend/`.
+- `frontend.md` — TypeScript/React/MapLibre conventions for `frontend/`.
+
+Read the relevant rule file before working in `frontend/` or `backend/`.
 
 ## Engineering Rules
 
@@ -50,6 +65,7 @@ Use Jira project `HFT` on `data-karate.atlassian.net` for task tracking. Board I
 - Only move a card to `In Progress` when the user explicitly asks.
 - Do not transition any card to `Done` unless its current status is `Review`.
 - Before moving a card to `Done`, check the current status with a read-only Jira command.
+- Only the `QA` agent should move cards from `Review` to `Done`, after it validates acceptance criteria and comments with evidence.
 - Do not delete Jira work items unless the user explicitly requests deletion.
 
 ## Verification
