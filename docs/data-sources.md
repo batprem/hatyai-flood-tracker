@@ -196,47 +196,65 @@ Minimum checks for every normalized forecast run:
 
 These checks should fail closed for public risk generation. A failed or partial forecast can still be stored for debugging, but the risk engine should only consume frames marked usable.
 
-## Observation Sources To Research
+## Observed Rainfall And Water-Level Research
 
-### ThaiWater / HAII
+HFT-7 focuses on sustainable real-time or near-real-time observations for Hat Yai, the U-Tapao canal, and the Songkhla Lake basin. The MVP should not depend on brittle scraping. Use documented APIs, open data catalogs, bulk files, or written data-sharing paths first; use public dashboards and news bulletins only as manual validation or emergency context until permission and stability are clear.
 
-Research direction:
+### Minimum Observed Data Fields
 
-- Check for documented public APIs, open data endpoints, data catalogs, or requestable access for rainfall and water-level stations.
-- Confirm update frequency, station metadata, units, historical access, attribution language, and redistribution limits.
-- Prefer API or bulk access over parsing public dashboard pages.
+Every observed rainfall or water-level record should be normalized before it reaches API responses.
 
-Potential use:
+Required fields:
 
-- Observed rainfall for validation.
-- Water-level station observations in the U-Tapao canal and surrounding basin.
-- Historical event context if data access includes archives.
+- `provider`: source owner or aggregator, such as `thaiwater`, `tmd`, `rid`, `hatyai_municipality`, `psu`, `gsmap`, or `imerg`.
+- `sourceSystem`: API, bulk file, data-sharing agreement, manual bulletin, or satellite product.
+- `stationId` or `gridCellId`: stable provider identifier.
+- `stationName` and `stationNameLocal`: if available.
+- `location`: longitude, latitude, coordinate reference system, and elevation or gauge datum if available.
+- `basin`, `province`, `amphoe`, and `tambon`: when the provider supplies administrative or basin filters.
+- `variable`: `rainfall`, `water_level`, `discharge`, `reservoir_storage`, or satellite precipitation variable.
+- `value` and `unit`: preserve original unit and normalize rainfall to millimeters, water level to meters, and discharge to cubic meters per second.
+- `observedAt`: measurement time in UTC.
+- `sourceUpdatedAt`: provider update time when supplied.
+- `retrievedAt`: when this system fetched the record.
+- `qualityFlag` and `qualityControlLevel`: provider quality fields when supplied.
+- `provenance`: source URL, access method, license or terms note, attribution text, and contact path.
 
-### Thai Meteorological Department
+### Source Evaluation Matrix
 
-Research direction:
+| Source | Useful data | Practical access path | Expected update frequency | Integration risk | License/access risk | Next contact or research step |
+| --- | --- | --- | --- | --- | --- | --- |
+| ThaiWater / HAII / HII National Hydroinformatics and Climate Data Center | Rainfall observations, water-level or discharge observations, station metadata, basin and agency filters | ThaiWater water-data standard documents describe online API resources for `/Rainfall`, water-level or river-flow data, and `/StationInfo`; API examples include station code, agency code, basin filters, `measureTime`, `updateTime`, variable, value, unit, and quality fields | API standard supports interval-based retrieval such as latest values and time ranges; likely hourly for many water resources, but confirm per station | Medium: documented schema is strong, but production access may require authentication, certificates, or agency approval | Medium: best national aggregator, but public display, caching, research export, attribution, and redistribution terms must be confirmed | Treat as Phase 1 primary observed-data target. Request access or credentials, list stations in Songkhla/U-Tapao basin by `provinceCode`, `basinCode`, and station type, then test latest rainfall and water-level calls |
+| Thai Meteorological Department Open Data / TMDAPI | Observed rainfall/weather stations, station metadata, rain regions, radar and satellite context, forecast APIs | TMD Open Data advertises JSON/XML APIs, station datasets, observed weather/rainfall products, radar/support data, and registration for some forecast APIs | Observed station cadence varies by product; assume hourly to daily until confirmed; radar/support products may be more frequent but terms may restrict redistribution | Medium: official API exists, but product-specific docs and registration requirements differ | Medium: TMD publishes as Open Government Data, but registration terms and copyright language need review before public redistribution or caching | Use as Phase 1 secondary rainfall cross-check. Identify Songkhla/Hat Yai AWS and rain products, confirm terms, and verify whether rainfall observations can be cached and shown publicly |
+| Royal Irrigation Department / RID Smart Data / RIWI / SWOC | Canal water level, discharge, reservoir status, flood-operation context, rainfall at RID stations | RID has public reservoir APIs and Smart Data/RIWI channels; U-Tapao water-level stations are referenced publicly through ONWR/RID reports, including X.173A Ban Muang Kong, X.44 Ban Hat Yai, and X.174 Khlong Wa | Reservoir public data may be daily; canal telemetry may be near-real-time or hourly, but access path is not yet confirmed | High for canal telemetry unless Smart Data API access is granted; low to medium for public reservoir endpoint | Medium to high: public dashboard/app visibility does not automatically permit API reuse, caching, or redistribution | Contact RID regional office or Smart Water Operation Center for U-Tapao canal telemetry access. In parallel, use public station IDs as a manual seed list and avoid scraping RIWI dashboards |
+| Hat Yai municipality, Songkhla province, DDPM, and ONWR public bulletins | Local flood flags, canal levels relative to bank, detention pond status, evacuation context, event reports | Official statements, flood center announcements, ONWR/National Water Command Center reports, province updates, and emergency bulletins | Irregular during normal periods; frequent during events | Medium for manual use, high for automated ingestion unless a feed or written permission exists | High for automated reuse if content comes from social posts, news summaries, or non-API pages | Use as validation and public-context source only for MVP. Ask municipality/province for any machine-readable feed, API, CSV, or data-sharing contact for flood-center observations |
+| Prince of Songkla University and local research groups | Historical flood studies, local basin knowledge, possible sensors or event datasets, evacuation/shelter context | Research publications, disaster studies contacts, project pages, and direct collaboration with relevant PSU centers | Usually event-based or research archive, not operational telemetry unless a project feed exists | Medium: strong local relevance but likely not a standardized operational API | Medium: research data may need explicit permission and citation terms | Contact PSU researchers or disaster/risk centers for historical event datasets, station references, and possible collaboration; use published studies for context, not live ingestion |
+| GSMaP by JAXA | Satellite precipitation fallback over Thailand, hourly near-real-time rainfall rate, gauge-calibrated products, flags | JAXA Global Rainfall Watch / G-Portal provides GSMaP products in binary, text, NetCDF, HDF5, GeoTIFF, and related formats; clip to the Phase 1 bounding box | GSMaP_NRT is hourly with about 4-hour latency; GSMaP_NOW map is updated about every 30 minutes but product access and use need product-specific review | Medium: gridded processing is straightforward, but binary/NetCDF parsing, latency, and bias validation are needed | Low to medium: G-Portal data is generally free with acknowledgement requirements, but exact product terms and citation must be stored | Use as satellite fallback for observed rainfall gaps. Start with one recent GSMaP_NRT hourly file, clip to the basin, and compare against any ThaiWater/TMD gauges |
+| IMERG by NASA GPM | Satellite precipitation fallback, half-hourly near-real-time precipitation, historical research record | NASA GPM / PPS directories provide IMERG Early, Late, and Final runs in HDF, GeoTIFF, NetCDF, and other formats; PPS registration may be required for some access | Early Run is about 4-hour latency; Late Run about 12-hour latency; half-hourly native estimates | Medium: good documentation and formats, but account setup and file naming/version changes must be handled | Low to medium: NASA data is broadly reusable, but attribution, product version, and PPS access terms must be documented | Keep as secondary satellite fallback or research comparison against GSMaP. Verify current V07B access path and automate a small basin subset before production use |
 
-- Check available rainfall station, radar, forecast, warning, and API products.
-- Confirm whether radar imagery or gridded precipitation can be redistributed or only linked.
-- Prefer official data feeds or written permission before operational use.
+### Recommended Phase 1 Path For Observations
 
-Potential use:
+Phase 1 should select ThaiWater / HAII as the first observed-data integration candidate because it is the most relevant national aggregator and has documented standard API resources for rainfall, water-level or river-flow observations, and station metadata. Build the backend observation schema around ThaiWater-like records: station metadata, latest measurement retrieval, time-range retrieval, units, quality flags, and provenance.
 
-- Observed rainfall and radar context.
-- Cross-checking model forecasts during heavy rain events.
+Use TMD Open Data as the rainfall cross-check and official meteorological context. TMD is especially useful for observed rainfall, AWS stations, radar context, and public weather attribution, but each product needs a terms and registration check before public display.
 
-### Royal Irrigation Department And Local Sources
+For water levels, pursue RID or ONWR/RID data-sharing for U-Tapao canal telemetry, especially stations reported publicly as X.173A Ban Muang Kong, X.44 Ban Hat Yai, and X.174 Khlong Wa. Until a stable API or written permission exists, keep these as mock/manual station references and do not build operational ingestion around scraped dashboards.
 
-Research direction:
+Use Hat Yai municipality, Songkhla province, DDPM, ONWR bulletins, and PSU research as validation and historical context. They are high value for local interpretation, flood flags, bank-relative levels, and event narratives, but they are not reliable primary ingestion sources unless an official feed or data-sharing agreement is obtained.
 
-- Identify RID gauges, local municipality stations, university-maintained sensors, and provincial public reports near Hat Yai and the U-Tapao canal.
-- Check whether data is available through official APIs, CSV downloads, published bulletins, or data-sharing agreements.
-- Avoid automated scraping unless terms explicitly allow it and the page structure is stable.
+Add GSMaP_NRT first as the satellite rainfall fallback if local gauges are delayed or restricted. It provides hourly gridded precipitation with about 4-hour latency and can be clipped to the Phase 1 basin. Keep IMERG Early/Late as a second satellite option for comparison and research continuity, especially if the NASA data path is easier to automate for this project.
 
-Potential use:
+### MVP Observation Recommendation
 
-- Water level thresholds.
-- Manual seed dataset for key stations if real-time access is not ready.
+MVP selection:
+
+1. Primary observed rainfall and water-level target: ThaiWater / HAII APIs, pending access and license confirmation.
+2. Rainfall cross-check: TMD Open Data observed station products, pending product-specific terms.
+3. Water-level priority: RID/ONWR data-sharing path for U-Tapao canal stations, with public station IDs used only as seed metadata until API access is confirmed.
+4. Fallback gridded observed rainfall: GSMaP_NRT clipped to the configured basin; add IMERG only if GSMaP access or validation is insufficient.
+5. Local context: municipality, province, DDPM, ONWR bulletins, and PSU contacts for event validation, thresholds, and historical interpretation.
+
+Do not expose any observed source in public risk calculations until the record includes source, station or grid id, measurement time, retrieval time, variable, unit, quality status, and license/attribution notes. If source freshness becomes stale, the backend should keep serving forecasts and mark observations as unavailable or stale rather than silently mixing old station values into risk levels.
 
 Suggested station shape:
 
