@@ -114,9 +114,9 @@ Decision table:
 
 | Situation | Output behavior |
 | --- | --- |
-| No forecast rainfall is available | Do not assign a risk level; return availability metadata or omit the risk feature and show a data unavailable message. |
+| No forecast rainfall is available | Return `availability: "unavailable"`, set `computedLevel`/`computedScore` to `null`, and use a non-green display level with clear unavailable copy. |
 | Forecast is available and fresh | Return the max rainfall score, optionally raised by reliable water-level score. |
-| Forecast is stale | Return the computed level with `freshness.status: "stale"` and public stale-data copy. |
+| Forecast is stale | Return `availability: "degraded"` with `freshnessStatus: "stale"` and stale-data copy. If the computed level is `green`, display at least `yellow` so stale data cannot render as a current all-clear. |
 | Rainfall is low but water level is at warning/danger | Use water-level score if station thresholds are reliable. |
 | Water station data is mock or thresholdless | Include station context, but do not raise above rainfall score. |
 | Multiple models disagree | Use the higher risk level for public display and expose model disagreement in `uncertainty`. |
@@ -141,6 +141,10 @@ The backend-facing shape should stay stable whether the risk comes from mock dat
   },
   "level": "orange",
   "score": 2,
+  "computedLevel": "orange",
+  "computedScore": 2,
+  "availability": "available",
+  "freshnessStatus": "fresh",
   "validFrom": "2026-05-01T00:00:00Z",
   "validTo": "2026-05-04T00:00:00Z",
   "generatedAt": "2026-05-01T03:30:00Z",
@@ -160,12 +164,35 @@ The backend-facing shape should stay stable whether the risk comes from mock dat
     "modelRunAgeHours": 3.5,
     "latestSourceRetrievedAt": "2026-05-01T03:20:00Z"
   },
+  "coverage": {
+    "forecastCellsExpected": 2,
+    "forecastCellsAvailable": 2,
+    "basinCoverageRatio": 1,
+    "waterStationsExpected": 2,
+    "waterStationsAvailable": 2,
+    "elevatedSignalCount": 1
+  },
   "uncertainty": {
     "level": "medium",
     "reasons": [
       "Forecast rainfall can shift between model runs.",
       "Observed water-level data is not yet available for all stations."
     ]
+  },
+  "mapProperties": {
+    "areaId": "hatyai-basin",
+    "level": "orange",
+    "score": 2,
+    "primaryDriver": "24-hour rainfall",
+    "generatedAt": "2026-05-01T03:30:00Z",
+    "validAt": "2026-05-02T00:00:00Z",
+    "availability": "available",
+    "freshnessStatus": "fresh",
+    "uncertaintyLevel": "medium",
+    "source": "gfs",
+    "modelRunTime": "2026-05-01T00:00:00Z",
+    "latestSourceRetrievedAt": "2026-05-01T03:20:00Z",
+    "isOfficialWarning": false
   },
   "explanation": {
     "th": "คาดว่าฝนสะสม 24 ชั่วโมงอยู่ในระดับสูง อาจเกิดน้ำท่วมในพื้นที่ลุ่มต่ำและพื้นที่ระบายน้ำช้า โปรดติดตามประกาศจากหน่วยงานทางการ",
@@ -189,10 +216,26 @@ For map features, wrap the same properties in GeoJSON:
     "level": "yellow",
     "score": 1,
     "primaryDriver": "rainfall24hMm",
-    "generatedAt": "2026-05-01T03:30:00Z"
+    "generatedAt": "2026-05-01T03:30:00Z",
+    "validAt": "2026-05-02T00:00:00Z",
+    "availability": "available",
+    "freshnessStatus": "fresh",
+    "uncertaintyLevel": "medium",
+    "source": "gfs",
+    "modelRunTime": "2026-05-01T00:00:00Z",
+    "latestSourceRetrievedAt": "2026-05-01T03:20:00Z",
+    "isOfficialWarning": false
   }
 }
 ```
+
+Availability variants:
+
+| Availability | Meaning | Display behavior |
+| --- | --- | --- |
+| `available` | Forecast rainfall exists and meets freshness / coverage rules. | Display the computed risk level. |
+| `degraded` | Forecast exists but is stale, low coverage, or otherwise less reliable. | Keep the computed level visible, but never display stale `green` as a current all-clear. |
+| `unavailable` | Forecast rainfall is missing or no configured rule can score it. | Return no computed level and show unavailable public copy with `level: "yellow"` as a conservative display state. |
 
 ## Public Explanation Text
 
@@ -266,6 +309,8 @@ Useful validation metrics:
 ## Implementation Notes
 
 - Store thresholds in backend configuration, not hard-coded UI logic.
+- Current backend config exposes rainfall thresholds for 1h, 3h, 6h, 24h, 48h, and 72h windows, plus freshness windows, coverage expectations, and optional water-level behavior via `HFT_RISK_*` settings.
+- Mock water-level observations are supporting context by default and do not raise public risk unless explicitly enabled for local testing.
 - Keep rainfall units in millimeters and timestamps in ISO 8601 UTC.
 - Include source, run time, valid time, generated time, and retrieval time in risk outputs.
 - Do not expose raw provider payloads directly to the frontend.

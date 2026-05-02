@@ -35,6 +35,8 @@ Initial configuration shape:
 
 Ingestion should subset to this bounding box as early as practical to reduce download size, parsing time, and MongoDB storage cost. Store the bounding box or geometry reference on every normalized forecast frame so map rendering and research exports can explain what was processed.
 
+Phase 1 GIS scope is intentionally a bounding box, not an authoritative hydrologic basin polygon. Before production risk messaging, validate the box against a trusted U-Tapao/Songkhla basin GIS layer, document any upstream catchment omissions, and decide whether the backend should clip to a basin polygon, a forecast-grid mask, or both.
+
 ## Forecast Models
 
 ### GFS
@@ -54,9 +56,10 @@ Priority variables:
 
 Implementation notes:
 
-- Use NOAA/NCEP GFS GRIB2 products from public object storage or HTTPS endpoints.
+- Use NOAA/NCEP GFS GRIB2 products from public object storage or HTTPS endpoints, starting with `pgrb2.0p25` accumulated precipitation (`APCP`) for the proof of concept.
+- Expected run cycles are 00Z, 06Z, 12Z, and 18Z. Treat a run as `fresh` only while it is within the configured GFS freshness threshold, currently 7 hours in the backend POC.
 - Start with a low-resolution product and short forecast horizon for the proof of concept before increasing temporal coverage.
-- Normalize provider-specific accumulated precipitation semantics into explicit frame windows such as `accumulationHours`.
+- Normalize provider-specific accumulated precipitation semantics into explicit frame windows: `windowStart`, `windowEnd`, `accumulationHours`, and `providerAccumulationSemantics`.
 - Keep provider units in provenance and expose normalized precipitation in millimeters.
 
 ### ECMWF Open Data
@@ -75,6 +78,8 @@ Priority variables:
 Implementation notes:
 
 - Use ECMWF Open Data only within its published terms.
+- Start with total precipitation (`tp`) from ECMWF Open Data/IFS-style products, behind the same provider interface as GFS.
+- Expected open-data run cycles are 00Z and 12Z for Phase 1 planning. Treat a run as `fresh` only while it is within the configured ECMWF freshness threshold, currently 13 hours in the backend POC.
 - Confirm exact dataset, redistribution rules, and attribution text before public launch.
 - Keep ECMWF ingestion behind the same normalized schema as GFS so the backend and frontend can switch by `provider` and `model`.
 
@@ -90,11 +95,14 @@ Suggested `forecast_frames` document:
   "model": "gfs",
   "runTime": "2026-05-01T00:00:00Z",
   "validTime": "2026-05-02T00:00:00Z",
+  "windowStart": "2026-05-01T18:00:00Z",
+  "windowEnd": "2026-05-02T00:00:00Z",
   "retrievedAt": "2026-05-01T04:18:30Z",
   "forecastHour": 24,
   "variable": "precipitation",
   "statistic": "accumulation",
   "accumulationHours": 24,
+  "providerAccumulationSemantics": "Provider-specific accumulation step metadata preserved during normalization.",
   "unit": "mm",
   "area": {
     "name": "hatyai_utapao_songkhla_phase1",
@@ -129,6 +137,8 @@ Suggested `forecast_frames` document:
 
 The value storage can start simple. For a small POC, values may be stored as a compact array or GeoJSON-like grid cells. For larger coverage, keep raw artifacts in object storage and store only frame metadata plus a tile or raster reference in MongoDB.
 
+`validTime` is the forecast target time. For accumulated precipitation frames, `windowEnd` must match `validTime`, `windowStart` must be earlier than `windowEnd`, and `accumulationHours` must equal the window duration. Provider-specific semantics still matter: GFS GRIB step ranges and ECMWF Open Data step metadata must be recorded in `providerAccumulationSemantics` so downstream rainfall totals do not silently mix incompatible accumulation periods.
+
 ## MongoDB Storage Shape
 
 Use MongoDB time-series collections where documents are naturally time-indexed and small enough for efficient range queries. Keep large raster payloads out of hot collections if they grow beyond MVP scale.
@@ -143,14 +153,15 @@ Recommended collections:
 
 Index implications:
 
-- `forecast_frames`: compound index on `{ provider, model, variable, runTime, validTime }`.
+- `forecast_frames`: MongoDB time-series collection with native BSON Date `validTime` as the time field and provider/model/variable/run metadata available for filtering. If the team keeps frame values in a normal collection for the POC, preserve the same native Date fields before migrating.
+- `forecast_frames`: compound index on `{ provider, model, variable, runTime, validTime, windowStart, windowEnd }`.
 - `forecast_frames`: `2dsphere` index if frame cells or polygons are stored as GeoJSON geometries.
-- `forecast_runs`: unique index on `{ provider, model, runTime }` for idempotent reruns.
+- `forecast_runs`: unique index on `{ provider, model, runTime }` for idempotent reruns, with `runTime`, `retrievedAt`, and `processedAt` stored as native BSON Date values.
 - `station_observations`: time-series time field `observedAt`, metadata field `stationId`, and geospatial station metadata stored separately or embedded carefully.
 
 ## Model Time Handling
 
-All stored timestamps should be timezone-aware UTC ISO 8601 strings.
+Python domain models should use timezone-aware UTC `datetime` objects internally. MongoDB storage should use native BSON Date fields, not strings, for `runTime`, `validTime`, `windowStart`, `windowEnd`, `retrievedAt`, `processedAt`, and future `observedAt` values. API responses and CLI display output may serialize those timestamps as ISO 8601 strings at the boundary.
 
 Required times:
 
@@ -166,7 +177,7 @@ Forecast ingestion should follow provider model cycles instead of pretending to 
 
 Freshness status should be visible to backend operators and eventually to public or research views.
 
-Recommended statuses:
+Use these exact statuses across ingestion run records, freshness documents, API responses, and docs:
 
 - `fresh`: latest expected run has been processed successfully.
 - `delayed`: expected provider run is not available yet, but previous data is still acceptable.
@@ -292,6 +303,15 @@ Suggested approach:
 
 ## First Implementation Plan: GFS/ECMWF POC
 
+The backend now includes an executable dry-run POC that exercises provider discovery, fixture fetch, normalization, and dry-run storage without network access or external secrets:
+
+```bash
+cd backend
+uv run python -m app.ingestion.forecast_cli --provider all --forecast-hours 6,12 --mongo-preview
+```
+
+The POC intentionally uses tiny deterministic fixture grids so it can run in CI and local development. Real GFS and ECMWF clients should replace the fixture client behind the same provider interface after one small real download is validated.
+
 1. Add backend configuration for provider enablement, target bounding box, forecast horizon, accepted variables, and storage collection names.
 2. Build a GFS-only proof of concept that downloads one recent run, one precipitation variable, and a short set of forecast hours for the configured bounding box.
 3. Parse GRIB2 locally, convert precipitation to millimeters, and emit normalized `forecast_frames` records with provenance.
@@ -331,6 +351,8 @@ The project can use public/free APIs for prototyping, but production data should
 - Update frequency limits.
 - API quota or reliability risks.
 - Whether public display, research export, and cached storage are permitted.
+
+Production gate: do not enable a provider in public risk messaging until the repository contains explicit attribution text, license or terms URL, redistribution and caching decision, source-owner name, and a review note confirming the app may display derived rainfall maps for Hat Yai public awareness and research use. Until that gate is complete, provider records should carry `license` values such as `review-required` and public UI copy should avoid implying operational endorsement from the provider.
 
 Open questions before production launch:
 
