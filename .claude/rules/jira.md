@@ -27,10 +27,12 @@ Use Jira for project task tracking when the user asks to create, view, update, a
 ## Status Policy
 
 - Move a card to `In Progress` before starting a task.
+- Move a card to `Require human` when work cannot finish without a human decision, credential, dependency install, or other out-of-band action. Comment with the exact blocker, what was tried, and the specific input needed before transitioning. Resume only after the human responds and moves the card back to `In Progress`.
 - Do not transition any card directly to `Done` unless its current status is `Review`.
 - Before moving a card to `Done`, check the current status with a read-only Jira command.
 - If a card is not in `Review`, explain that it must move through `Review` first.
 - Only the `QA` agent may move a card from `Review` to `Done`, and only after validating acceptance criteria and commenting with evidence.
+- Only the `QA` agent may move a failed card from `Review` to `Blocked`, and only after commenting with blockers and failed validation evidence.
 - Do not bypass this rule with bulk transitions.
 
 ## Safety

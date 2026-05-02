@@ -31,7 +31,7 @@ Use the focused agent when work clearly belongs to one area. Definitions live in
 - `backend`: FastAPI routes, Pydantic schemas, MongoDB access, backend settings, API contracts, risk endpoints.
 - `data-engineering`: GFS/ECMWF ingestion, GRIB/NetCDF parsing, time-series storage, freshness, retries, provenance, data quality.
 - `data-analytics`: historical flood events, rainfall thresholds, risk rule calibration, model comparison, validation, research summaries.
-- `QA`: validation of Jira cards in `Review`, acceptance checks from `qa/`, Playwright/browser testing, and moving passed cards from `Review` to `Done`.
+- `QA`: validation of Jira cards in `Review`, acceptance checks from `qa/`, Playwright/browser testing, moving passed cards from `Review` to `Done`, and moving failed cards from `Review` to `Blocked`.
 
 Coordinate across agents when changing API contracts, data shapes, risk levels, or map layer schemas.
 
@@ -63,9 +63,11 @@ Use Jira project `HFT` on `data-karate.atlassian.net` for task tracking. Board I
 
 - Do not move cards to `In Progress` automatically when starting work.
 - Only move a card to `In Progress` when the user explicitly asks.
+- Move a card to `Require human` when an agent cannot finish the work without a human decision, credential, dependency install, or other out-of-band action. Comment on the card with the exact blocker, what was tried, and the specific input needed from the user.
 - Do not transition any card to `Done` unless its current status is `Review`.
 - Before moving a card to `Done`, check the current status with a read-only Jira command.
 - Only the `QA` agent should move cards from `Review` to `Done`, after it validates acceptance criteria and comments with evidence.
+- Only the `QA` agent should move failed cards from `Review` to `Blocked`, after it comments with blockers and failed validation evidence.
 - Do not delete Jira work items unless the user explicitly requests deletion.
 
 ## Verification
