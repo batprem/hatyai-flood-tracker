@@ -98,3 +98,7 @@ Before reporting completion:
 
 - `backend/CLAUDE.md` - Backend agent guide.
 - `frontend/CLAUDE.md` - Frontend agent guide.
+
+# Available CLI:
+- `acli` - Atlassian CLI for Jira.
+- `gcloud` - Google Cloud CLI.
