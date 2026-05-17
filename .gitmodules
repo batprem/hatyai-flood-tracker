@@ -7,3 +7,6 @@
 [submodule "qa"]
 	path = qa
 	url = https://github.com/batprem/hatyai-flood-tracker-qa
+[submodule "data-engineering"]
+	path = data-engineering
+	url = https://github.com/batprem/hatyai-flood-tracker-de
