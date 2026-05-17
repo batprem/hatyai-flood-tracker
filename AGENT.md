@@ -94,3 +94,7 @@ Before reporting completion:
 - Check lints for edited rule, agent, or documentation files when practical.
 - Report changed files, verification steps, and any data source or environment assumptions.
 
+## CLAUDE.md in child directories
+
+- `backend/CLAUDE.md` - Backend agent guide.
+- `frontend/CLAUDE.md` - Frontend agent guide.
