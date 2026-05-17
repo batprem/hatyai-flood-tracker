@@ -34,7 +34,7 @@ Out of scope for Phase 1:
 
 Frontend:
 
-- Vite
+- Bun as the bundler and dev server (see "Frontend Bundler Choice" below); the `VITE_*` env-var prefix is retained for compatibility
 - React
 - TypeScript
 - MapLibre GL JS for the interactive map
@@ -126,6 +126,10 @@ The rule engine should be replaceable later with hydrological or ML models.
 - Keep raw provider data separate from normalized API data when possible.
 - Design mocks with the same shape as expected real data.
 - Treat license review as part of selecting permanent data sources.
+
+## Frontend Bundler Choice
+
+The frontend currently uses Bun (`bun install`, `bun run dev`, `bun run build` via `build.ts`) rather than Vite, even though browser env vars keep the `VITE_*` prefix for compatibility. Open question: stay on Bun long-term or move to Vite once tooling needs (plugins, SSR, ecosystem parity) demand it. Revisit before Phase 2.
 
 ## Early Architecture Decision
 
