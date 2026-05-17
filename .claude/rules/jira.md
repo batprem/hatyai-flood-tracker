@@ -24,6 +24,14 @@ Use Jira for project task tracking when the user asks to create, view, update, a
 - Use project `HFT` unless the user explicitly says otherwise.
 - Show created or updated issue keys and URLs in the final response when available.
 
+## Work Item Hierarchy
+
+- The project hierarchy is `Epic → Task → Subtask`. Epics have `Task` children; Tasks may have `Subtask` children.
+- When creating an Epic with planned children, create each child as a real Jira work item linked via `--parent <EPIC-KEY>`. Do not list children only as text bullets in the Epic description — Jira already tracks the parent/child link.
+- Match the existing project type pattern: children of an Epic are `Task` items unless the user explicitly asks for `Subtask`.
+- Do not invent custom key prefixes (for example `HFT-1.5.A`) for child cards. Let Jira assign the next sequential key (`HFT-15`, `HFT-16`, …) and refer to children by their real keys.
+- Verify the parent/child relationship after creation with `acli jira workitem search --jql "project = HFT AND parent = <EPIC-KEY>"`.
+
 ## Status Policy
 
 - Move a card to `In Progress` before starting a task.
