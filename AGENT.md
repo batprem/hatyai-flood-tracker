@@ -25,13 +25,29 @@ This repository is the Hat Yai flood warning project: a mobile-first public floo
 
 ## Sub-Agent Routing
 
-Use the focused agent when work clearly belongs to one area. Definitions live in `.claude/agents/` (Claude Code) and `.cursor/agents/` (Cursor):
+Default to the `coordinator` agent for any non-trivial task. The coordinator plans the work, picks the right specialist agent at the right tier, and spawns sub-agents under isolated git worktrees. Talk to a specialist directly only when the task is small, single-area, and obvious. Definitions live in `.claude/agents/` (Claude Code) and `.cursor/agents/` (Cursor):
 
+- `coordinator`: plans work, decomposes cross-area tasks, selects specialist + tier, spawns sub-agents with `isolation: "worktree"`, reconciles cross-area contracts.
 - `frontend`: Vite, React, TypeScript, MapLibre UI, public alert pages, map controls, styling, frontend env vars.
 - `backend`: FastAPI routes, Pydantic schemas, MongoDB access, backend settings, API contracts, risk endpoints.
 - `data-engineering`: GFS/ECMWF ingestion, GRIB/NetCDF parsing, time-series storage, freshness, retries, provenance, data quality.
 - `data-analytics`: historical flood events, rainfall thresholds, risk rule calibration, model comparison, validation, research summaries.
 - `QA`: validation of Jira cards in `Review`, acceptance checks from `qa/`, Playwright/browser testing, moving passed cards from `Review` to `Done`, and moving failed cards from `Review` to `Blocked`.
+
+### Tiered Specialists
+
+The coordinator may spawn tiered variants of the engineering specialists when the complexity decision matters. The tier is the model:
+
+- `backend-senior` (opus) — API contract design, schema design, risk-rule logic, cross-cutting refactors, concurrency or data-integrity reasoning, ambiguous tradeoffs.
+- `backend-junior` (sonnet) — well-scoped implementation that mirrors an existing pattern; no public-contract change.
+- `frontend-senior` (opus) — public-safety UI changes, map layer architecture, shared API contracts, cross-cutting refactors, performance/accessibility tradeoffs.
+- `frontend-junior` (sonnet) — well-scoped component or styling work that mirrors an existing pattern; no risk-messaging or contract change.
+
+When tier does not matter or the task is straightforward, the coordinator should spawn the default `backend` or `frontend` agent instead.
+
+### Worktree Isolation
+
+When the coordinator spawns a sub-agent that will edit code inside `backend/` or `frontend/`, it passes `isolation: "worktree"` to the Agent tool so the work happens on an isolated copy. This is required for any write-mode sub-agent on those submodules, and required when running multiple write-mode sub-agents in parallel. See `backend/CLAUDE.md` and `frontend/CLAUDE.md` for the per-submodule rule.
 
 Coordinate across agents when changing API contracts, data shapes, risk levels, or map layer schemas.
 
