@@ -77,6 +77,32 @@ Read the relevant rule file before working in `frontend/` or `backend/`.
 
 Use Jira project `HFT` on `data-karate.atlassian.net` for task tracking. Board ID is `4` and the board type is `simple`, so do not use sprint-based commands.
 
+### Task Fetching
+
+Fetch tasks with the `acli` CLI before starting any Jira-driven work. All queries should scope to `project = HFT`.
+
+- Open work (active board):
+
+  ```bash
+  acli jira workitem search --jql "project = HFT AND status in ('To Do', 'In Progress')"
+  ```
+
+- Filter by a specific status (`'To Do'`, `'In Progress'`, `'Review'`, `'Blocked'`, `'Require human'`, `'Done'`):
+
+  ```bash
+  acli jira workitem search --jql "project = HFT AND status = 'Review'"
+  ```
+
+- Full detail for a single card by key:
+
+  ```bash
+  acli jira workitem view HFT-XX
+  ```
+
+Combine clauses with `AND` for more focused queries (for example `AND parent = HFT-12`, `AND labels = 'backend'`, `AND assignee = currentUser()`). Always read the card with `workitem view` before making any transition or comment.
+
+### Status Rules
+
 - Do not move cards to `In Progress` automatically when starting work.
 - Only move a card to `In Progress` when the user explicitly asks.
 - Move a card to `Require human` when an agent cannot finish the work without a human decision, credential, dependency install, or other out-of-band action. Comment on the card with the exact blocker, what was tried, and the specific input needed from the user.

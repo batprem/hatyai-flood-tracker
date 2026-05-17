@@ -43,6 +43,16 @@ Use Jira for project task tracking when the user asks to create, view, update, a
 - Only the `QA` agent may move a failed card from `Review` to `Blocked`, and only after commenting with blockers and failed validation evidence.
 - Do not bypass this rule with bulk transitions.
 
+## Sub-Agent Checklist
+
+When a sub-agent (backend-senior, backend-junior, frontend-senior, frontend-junior, data-engineering, etc.) is briefed on a Jira-tracked task, its prompt **must** include these three explicit steps:
+
+1. `acli jira workitem transition --key <KEY> --status "In Progress"` — run before making any code changes.
+2. Push the branch, open the PR.
+3. `acli jira workitem transition --key <KEY> --status "Review"` then `acli jira workitem comment create --key <KEY> --body "PR: <URL>. <evidence summary>."` — run after the PR is open.
+
+If a sub-agent returns without having performed these steps, the coordinator or calling agent must perform them before reporting completion to the user. Do not rely on the sub-agent reading this rule file — include the steps as numbered instructions in every briefing.
+
 ## Safety
 
 - Do not delete Jira work items unless the user explicitly requests deletion.
