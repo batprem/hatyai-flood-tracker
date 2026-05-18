@@ -11,7 +11,7 @@ alwaysApply: false
 ## Typing
 
 - Target Python 3.13+.
-- Avoid `Any`. Use precise types, `object` for opaque values, or `JsonValue` from Pydantic for arbitrary JSON payloads.
+- Avoid `Any` or `object`. Use `JsonValue` from Pydantic for arbitrary JSON payloads.
 - Use modern typing syntax: `X | None`, `list[T]`, `dict[str, T]`, and imports from `collections.abc`.
 - Prefer `StrEnum` for string enums.
 
@@ -42,11 +42,14 @@ Add Google-style docstrings to public functions, classes, and route handlers.
 
 - Start with a one-line imperative summary that begins with an imperative verb (`Return`, `Compute`, `Persist`, `Model`, `Describe`, …) and ends with a period.
 - **`Args:` is mandatory** on every public callable (function, method, classmethod, staticmethod, route handler) that has at least one parameter beyond `self`/`cls`. Document **every** parameter, including FastAPI dependency-injected parameters (`Annotated[..., Depends(...)]`). The only excluded names are `self` and `cls`.
-- Use the full Google form inside `Args:`: `name (type): description.` The type **is** allowed to repeat the signature here, because the rendered docstring is the canonical reference for callers.
-- For optional parameters, mention the default in the description (for example `provider (str | None): Optional provider name to scope freshness. Defaults to ``None``.`).
-- Add `Returns:`, `Yields:`, or `Raises:` only when they add information beyond the signature. Do **not** repeat the return type in `Returns:` — write the description only.
-- Skip private helpers (`_foo`) and obvious dunder methods (`__init__`, `__repr__`, `__eq__`) unless their behavior is genuinely non-obvious. When a private helper is documented, the same `Args:` rule applies.
+- Inside `Args:`, use `name: description.` — **no type in the docstring**. The signature is the canonical source for types; repeating them is noise, especially for FastAPI `Annotated[T, Depends(...)]` parameters. Pydoclint is configured with `arg-type-hints-in-docstring = false` to enforce this.
+- For optional parameters, mention the default in the description (for example `provider: Optional provider name to scope freshness. Defaults to ``None``.`).
+- **`Returns:` is mandatory** on every public callable whose return annotation is not `None`. Write `Returns:\n    description.` — description only, never the type.
+- **`Raises:` is mandatory** when the function body contains a `raise <Exception>(...)`. List each exception class with a short description: `ExceptionClass: when it is raised.`
+- `Yields:` follows the same rules as `Returns:` for generators.
+- Skip private helpers (`_foo`) and obvious dunder methods (`__init__`, `__repr__`, `__eq__`) unless their behavior is genuinely non-obvious. When a private helper is documented, the same `Args:`/`Returns:`/`Raises:` rules apply.
 - Public Pydantic model classes need a class-level docstring describing what the model represents; field documentation belongs in `Field(description=...)`, not in the class docstring.
+- The hook `uv run pydoclint --style=google` runs after every backend Python edit and **blocks** on any violation. Treat its output as the canonical pass/fail.
 
 ## Tooling
 

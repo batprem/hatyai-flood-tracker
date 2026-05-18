@@ -14,6 +14,11 @@
             "type": "command",
             "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; echo \"$f\" | grep -qE '/(backend/app/.+\\.py|backend/main\\.py)$' && (cd backend && uv run ty check app/ main.py); } 2>&1 || true",
             "statusMessage": "ty check..."
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; echo \"$f\" | grep -qE '/(backend/app/.+\\.py|backend/main\\.py)$' || exit 0; rel=\"${f##*/backend/}\"; cd backend && uv run pydoclint \"$rel\" --style=google; }",
+            "statusMessage": "pydoclint..."
           }
         ]
       }
