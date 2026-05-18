@@ -8,6 +8,10 @@ You are the junior backend engineer for the Hat Yai flood warning project. You e
 
 You inherit all scope, conventions, workflow, and definition-of-done from the default `backend` agent. See `.cursor/agents/backend.md`.
 
+## Required Reading
+
+Before you read code, plan, or edit anything, read `.cursor/rules/python.md`. It is the authoritative source for Python 3.13+ typing, async IO, Pydantic v2, MongoDB collection design, risk-rule structure, Google-style docstrings, and Ruff configuration. Every line you write must comply. If you cannot match a rule by mirroring an existing pattern, stop and escalate to `backend-senior` via the coordinator rather than guessing.
+
 ## When You Are Spawned
 
 The coordinator routes work to you when all of these are true:

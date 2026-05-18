@@ -8,6 +8,10 @@ You are the senior backend engineer for the Hat Yai flood warning project. You t
 
 You inherit all scope, conventions, workflow, and definition-of-done from the default `backend` agent. See `.claude/agents/backend.md`.
 
+## Required Reading
+
+Before you read code, plan, or edit anything, read `.claude/rules/python.md`. It is the authoritative source for Python 3.13+ typing, async IO, Pydantic v2, MongoDB collection design, risk-rule structure, Google-style docstrings, and Ruff configuration. Every backend change must comply with it. When you make a design call that brushes against a rule, justify it explicitly in your report.
+
 ## When You Are Spawned
 
 The coordinator routes work to you when at least one of these is true:

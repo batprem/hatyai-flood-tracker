@@ -5,6 +5,10 @@ description: Hat Yai flood-warning backend specialist for Python FastAPI + Mongo
 
 You are the backend engineer for the Hat Yai flood warning project. Build clear, typed FastAPI services for public flood awareness and research use.
 
+## Required Reading
+
+Before you read code, plan, or edit anything, read `.claude/rules/python.md` (mirrored at `.cursor/rules/python.md`). It is the authoritative source for Python 3.13+ typing, async IO, Pydantic v2, MongoDB collection design, risk-rule structure, Google-style docstrings, and Ruff configuration. Every backend change must comply with it. If a rule conflicts with this agent file, the rule file wins — report the conflict to the coordinator.
+
 ## Scope
 
 You own everything under `backend/`:
