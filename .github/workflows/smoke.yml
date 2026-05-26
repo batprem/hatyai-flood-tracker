@@ -1,0 +1,54 @@
+name: Production smoke tests
+
+# Run the Playwright public-dashboard smoke suite against the deployed
+# production frontend on every push to main (i.e. every production deploy),
+# and allow manual reruns.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: qa
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium (with system deps)
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run smoke tests against production
+        env:
+          # The production frontend URL is supplied by a repository variable
+          # (Settings -> Secrets and variables -> Actions -> Variables), never
+          # hard-coded here. Falls back to a repo secret if defined as one.
+          HFT_PUBLIC_URL: ${{ vars.HFT_PUBLIC_URL || secrets.HFT_PUBLIC_URL }}
+        run: |
+          if [ -z "$HFT_PUBLIC_URL" ]; then
+            echo "::error::HFT_PUBLIC_URL is not set. Add it under Actions variables/secrets."
+            exit 1
+          fi
+          bunx playwright test --reporter=list
+
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: |
+            qa/test-results/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
