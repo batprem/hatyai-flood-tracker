@@ -63,7 +63,7 @@ Use the same rule table for both, then aggregate to the public status by taking 
 
 ## Seed Thresholds
 
-These thresholds are initial MVP values for transparent testing. They must be calibrated against historical Hat Yai flood events before being treated as operational guidance.
+The 24h and 48h thresholds below reflect Phase 1 calibration against 3 Hat Yai historical flood events (2000, 2010, 2011) as documented in the calibration section below. The 1h, 3h, 6h, and 72h windows retain initial MVP seed values pending more event data. All thresholds must be recalibrated with non-flood heavy-rain events before operational use.
 
 ### Rainfall Accumulation Thresholds
 
@@ -72,8 +72,8 @@ These thresholds are initial MVP values for transparent testing. They must be ca
 | 1h rainfall | `< 25 mm` | `25-39 mm` | `40-59 mm` | `>= 60 mm` |
 | 3h rainfall | `< 40 mm` | `40-69 mm` | `70-99 mm` | `>= 100 mm` |
 | 6h rainfall | `< 60 mm` | `60-99 mm` | `100-149 mm` | `>= 150 mm` |
-| 24h rainfall | `< 80 mm` | `80-129 mm` | `130-199 mm` | `>= 200 mm` |
-| 48h rainfall | `< 120 mm` | `120-199 mm` | `200-299 mm` | `>= 300 mm` |
+| 24h rainfall | `< 70 mm` | `70-119 mm` | `120-179 mm` | `>= 180 mm` |
+| 48h rainfall | `< 110 mm` | `110-174 mm` | `175-274 mm` | `>= 275 mm` |
 | 72h rainfall | `< 160 mm` | `160-249 mm` | `250-349 mm` | `>= 350 mm` |
 
 Use inclusive lower bounds. For example, `rainfall24hMm = 130` maps to `orange`.
@@ -305,6 +305,59 @@ Useful validation metrics:
 - Critical success index for `orange` and `red`
 - Median lead time before reported impact
 - Number of events with missing observations
+
+## Phase 1 Calibration Run — Hat Yai Historical Events 2000–2011
+
+**Script:** `backend/analytics/threshold_calibration.py` (runnable offline, no network access required)
+
+**Effective date:** 2026-05-27
+
+**Input data:** 3 Hat Yai flood events reconstructed from public post-event records (TMD, DDPM, RID, WMO/ESCAP panel reports). All rainfall values are basin-average estimates; see script source citations and confidence notes for each event.
+
+### Events Used
+
+| Event | Date | 24h mm | 48h mm | 72h mm | Outcome |
+| --- | --- | ---: | ---: | ---: | --- |
+| Hat Yai Great Flood 2000 | 2000-11-22 | 220 | 380 | 540 | Severe flood — U-Tapao overflowed, central Hat Yai > 2 m |
+| Hat Yai Flood 2010 | 2010-11-05 | 300 | 380 | 420 | Major flood — Songkhla disaster zone |
+| Hat Yai Flood 2011 (Washi precursor) | 2011-03-29 | 200 | 290 | 330 | Significant flood — district inundation, road closures |
+
+### Rule Engine Output Under Seed Thresholds
+
+| Event | 24h level | 48h level | 72h level | Composite | Correct? |
+| --- | --- | --- | --- | --- | --- |
+| 2000 | red | red | red | red | yes |
+| 2010 | red | red | red | red | yes |
+| 2011 | red | orange | orange | red | yes |
+
+Probability of detection (POD): **1.00** | False alarm ratio (FAR): n/a (no non-flood events in sample) | CSI: **1.00**
+
+### Analysis and Findings
+
+All three events trigger `red` under the seed thresholds. However, two concerns motivate conservative downward adjustments:
+
+1. The 2011 event (200 mm / 24 h) lands exactly on the seed `red` boundary (200 mm). A small forecast underestimate of 5–10 % would drop it to `orange`, which is still actionable but represents a less urgent public signal than warranted by the actual impact.
+2. The TMD operational heavy-rain advisory for southern Thailand uses a 150 mm / 24 h threshold for significant rain warnings. The seed `orange` boundary of 130 mm is close but the `red` boundary of 200 mm is meaningfully above the TMD advisory level for the most severe category. Lowering the `red` boundary to 180 mm reduces the gap between TMD advisories and this prototype's highest alert level.
+
+### Proposed Threshold Adjustments
+
+Adjustments are proposed for the 24 h and 48 h windows only. The 72 h window events all exceed 300 mm; three events do not provide enough resolution to distinguish between the current 250 mm (`orange`) and 350 mm (`red`) 72 h boundaries, so seed values are retained.
+
+| Window | Current yellow | Proposed yellow | Current orange | Proposed orange | Current red | Proposed red | Rationale |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 24h | 80 mm | **70 mm** | 130 mm | **120 mm** | 200 mm | **180 mm** | Align with TMD advisory levels; remove boundary sensitivity at 200 mm |
+| 48h | 120 mm | **110 mm** | 200 mm | **175 mm** | 300 mm | **275 mm** | Proportional conservative shift; 2011 event (290 mm) stays in `orange` |
+| 72h | 160 mm | 160 mm | 250 mm | 250 mm | 350 mm | 350 mm | No change — events too far above threshold for resolution |
+
+These adjusted values have been applied to `backend/app/core/config.py` Settings defaults as of 2026-05-27.
+
+### Limitations and Next Steps
+
+- **Sample size:** Three flood events with zero non-flood heavy-rain events. POD = 1.00 is trivially satisfied at this sample size. False-alarm ratio cannot be computed. Results are indicative only.
+- **Rainfall uncertainty:** Fixture values are basin-average estimates from post-event reports. Actual point observations can vary ±20–50 mm from basin averages for convective events.
+- **Retrospective forecast verification:** This run tests observed rain totals, not forecast model outputs. GFS / ECMWF hindcast verification for these events is deferred to a future calibration run when historical GRIB archives are accessible.
+- **Water-level thresholds:** No station observation data is included in this run. U-Tapao canal stage thresholds are not yet calibrated.
+- **Priority next steps:** Assemble 5–10 non-flood heavy-rain events (> 50 mm / 24 h, no flood impact) to enable false-alarm ratio computation. Incorporate RID U-Tapao station historical stage records to calibrate water-level thresholds.
 
 ## Implementation Notes
 
