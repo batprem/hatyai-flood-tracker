@@ -50,6 +50,24 @@ The bounding box above is retained as the **ingestion download bbox** (an effici
 
 **Caveat — boundary accuracy:** HydroBASINS Level 7 boundaries are delineated at watershed scale (roughly ~500 m positional accuracy, derived from 15 arc-second hydrography). This is suitable for clipping coarse forecast grids and removing clearly out-of-catchment cells (open sea south of Ko Yo, non-draining upstream terrain), but it is **not survey-grade** and should not be presented as a precise property-level inundation boundary.
 
+### Evacuation Shelter Dataset (HFT-70)
+
+- **File:** `backend/data/shelters_hatyai.geojson` and `frontend/public/data/shelters_hatyai.geojson` (identical content; served to the frontend at `/data/shelters_hatyai.geojson`).
+- **Contents:** 8 Point features — PSU Sports and Recreation Center (PSU Sport Complex), Thetsaban 1–4 municipal schools, Wat Thep Chumnum (Ban Phru), Sena Narong Camp (42nd Military Circle), and the 60th Anniversary International Convention Center.
+- **Shelter designations (what makes these "shelters"):** the November 2025 (B.E. 2568) Hat Yai flood response. Shelter lists were announced by Hat Yai City Municipality, Ban Phru Town Municipality, Kho Hong Town Municipality, and the Prime Minister's Office, as compiled by Thai news outlets (Kapook compilation `https://hilight.kapook.com/view/250584`; Thairath `https://www.thairath.co.th/scoop/theissue/2897350`). Each feature carries its own `source` and `source_url`.
+- **Coordinates:** OpenStreetMap node positions or polygon centroids, resolved per facility via Overpass API and Nominatim. Each feature carries `coordinate_source` (`node/...` or `way/...`) and `coordinate_source_url`.
+- **License:** coordinates © OpenStreetMap contributors, ODbL 1.0 (same license family as the basemap); shelter designations from public Thai government and news announcements.
+- **CRS:** WGS84 (EPSG:4326). **Retrieved:** 2026-06-12.
+- **Validation:** `uv run python scripts/validate_shelters.py` (backend repo) checks required provenance properties, type enum, plausible coordinates, and that every point lies inside `basin_utapao.geojson`. As of 2026-06-12 all 8 points are inside the basin (5.4–11.2 km from the boundary).
+
+**Caveats:**
+
+- Coordinates locate the facility (often a campus or compound), not the exact shelter building entrance; expect up to ~100 m offset inside large campuses (the PSU point is the Sport Complex building itself).
+- Shelter activation is event-specific. This list reflects the November 2025 flood response; municipalities may open different sites in future events. Treat as "known previously activated shelters", not a live operational list.
+- Capacity is recorded only where reported (PSU Sport Complex ~3,000); other capacities were not consistently published.
+- Facilities announced in Nov 2025 that could not be verified against OSM geometry were **excluded** rather than estimated: Ban Phru Municipal Office, Ban Phru Municipal Kindergarten, Phasi Charoen sports ground, Khuan Lang and Kho Hong municipal offices, International School Hat Yai, and several Kho Hong community halls. Songkhla Rajabhat University was excluded because it lies outside the U-Tapao basin (Mueang Songkhla). These can be added later with surveyed or officially published coordinates.
+- No machine-readable official DDPM/municipal shelter dataset was found; this is a manually verified list with per-feature provenance, per the HFT-70 fallback path.
+
 ## Forecast Models
 
 ### GFS
