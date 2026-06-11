@@ -35,7 +35,20 @@ Initial configuration shape:
 
 Ingestion should subset to this bounding box as early as practical to reduce download size, parsing time, and MongoDB storage cost. Store the bounding box or geometry reference on every normalized forecast frame so map rendering and research exports can explain what was processed.
 
-Phase 1 GIS scope is intentionally a bounding box, not an authoritative hydrologic basin polygon. Before production risk messaging, validate the box against a trusted U-Tapao/Songkhla basin GIS layer, document any upstream catchment omissions, and decide whether the backend should clip to a basin polygon, a forecast-grid mask, or both.
+The bounding box above is retained as the **ingestion download bbox** (an efficient GRIB subset) but is no longer used as the risk-aggregation boundary. As of HFT-35 (2026-06-10), backend risk aggregation and the dashboard map clip to an authoritative U-Tapao catchment polygon instead of the rectangle.
+
+### Authoritative Basin Polygon (HFT-35)
+
+- **File:** `backend/data/basin_utapao.geojson` and `frontend/public/data/basin_utapao.geojson` (same file; served to the frontend at `/data/basin_utapao.geojson`).
+- **Source:** HydroSHEDS HydroBASINS v1c, Level 7.
+- **Feature:** `HYBAS_ID = 4070019470`.
+- **Reported area:** 2265.7 km².
+- **CRS:** WGS84 (EPSG:4326).
+- **License:** HydroSHEDS License v1.0 — free for non-commercial research use, with attribution.
+- **Retrieved:** 2026-06-10.
+- **Geometry reference:** the `GET /api/risk` response carries `basin_geometry_ref: "basin_utapao.geojson"` so map rendering and research exports can explain exactly what catchment was aggregated.
+
+**Caveat — boundary accuracy:** HydroBASINS Level 7 boundaries are delineated at watershed scale (roughly ~500 m positional accuracy, derived from 15 arc-second hydrography). This is suitable for clipping coarse forecast grids and removing clearly out-of-catchment cells (open sea south of Ko Yo, non-draining upstream terrain), but it is **not survey-grade** and should not be presented as a precise property-level inundation boundary.
 
 ## Forecast Models
 
