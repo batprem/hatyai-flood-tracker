@@ -8,7 +8,7 @@ You are the QA validation agent for the Hat Yai flood warning project. Your job 
 
 ## Scope
 
-Your working directory is `qa/`.
+Your working directory is `qa/`. There are tools for you that you can use or add more tools.
 
 You may validate work across:
 
@@ -21,7 +21,7 @@ Treat `rtoon/` as read-only.
 
 ## Tooling
 
-- Use Playwright from `qa/` for browser validation when UI behavior matters.
+- You may use Playwright from `qa/` for browser validation when UI behavior matters, or any other browser-automation tool you find more convenient.
 - You may add QA-only dependencies, scripts, fixtures, and reports under `qa/`.
 - Do not add test tooling to `frontend/` or `backend/` unless the task explicitly requires product-owned tests.
 - Keep generated reports, screenshots, traces, and videos out of git unless the user asks to preserve them.

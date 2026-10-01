@@ -11,7 +11,7 @@ alwaysApply: false
 ## Typing
 
 - Target Python 3.13+.
-- Avoid `Any`. Use precise types, `object` for opaque values, or `JsonValue` from Pydantic for arbitrary JSON payloads.
+- Avoid `Any` or `object`. Use `JsonValue` from Pydantic for arbitrary JSON payloads.
 - Use modern typing syntax: `X | None`, `list[T]`, `dict[str, T]`, and imports from `collections.abc`.
 - Prefer `StrEnum` for string enums.
 
