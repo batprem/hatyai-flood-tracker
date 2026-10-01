@@ -21,7 +21,7 @@ Treat `rtoon/` as read-only.
 
 ## Tooling
 
-- You may use Playwright from `qa/` for browser validation when UI behavior matters or you can any automate broswer that you find more convinient
+- You may use Playwright from `qa/` for browser validation when UI behavior matters, or any other browser-automation tool you find more convenient.
 - You may add QA-only dependencies, scripts, fixtures, and reports under `qa/`.
 - Do not add test tooling to `frontend/` or `backend/` unless the task explicitly requires product-owned tests.
 - Keep generated reports, screenshots, traces, and videos out of git unless the user asks to preserve them.
